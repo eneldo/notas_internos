@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Calificación Internado Médico</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <main class="container">
+    <header class="card">
+      <h1>Calificación Internado Médico (DS-F-01) · v3</h1>
+      <p class="muted">Seleccione una rotación para abrir el formulario o generar QR/WhatsApp.</p>
+      <p class="muted small">Base pública QR/WhatsApp: <code>{{ public_base }}</code> (configurable con <code>PUBLIC_BASE_URL</code>)</p>
+    </header>
+
+    <section class="card">
+      <h2>Rotaciones activas</h2>
+      <div class="grid3">
+        {% for r in rotations %}
+          {% if r.activa %}
+          <div class="tile">
+            <div class="tile-title">{{ r.nombre }}</div>
+            <div class="tile-actions">
+              <a class="btn" href="/rate?r={{ r.id }}&mes=Enero">Abrir</a>
+              <a class="btn secondary" href="/qr/{{ r.id }}?mes=Enero">QR</a>
+              <a class="btn secondary" href="/go/wa?r={{ r.id }}&mes=Enero">WhatsApp</a>
+            </div>
+          </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Panel</h2>
+      <p class="muted">Para validar/listar/exportar necesitas credenciales (Admin/Coordinador).</p>
+      <div class="actions">
+        <a class="btn secondary" href="/admin">Administración</a>
+      <a class="btn" href="/profesor/login">Portal Docente</a>
+      </div>
+    </section>
+  </main>
+
+  {% include "partials/footer.html" %}
+</body>
+</html>

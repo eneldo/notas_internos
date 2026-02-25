@@ -1,0 +1,124 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<header class="admin-header">
+  <div>
+    <h1 class="admin-h1">Notas (por docente) y definitiva</h1>
+    <p class="muted">Muestra las notas de cada docente asignado (1..N) y calcula la definitiva por estudiante.</p>
+  </div>
+</header>
+
+<section class="card">
+  <form method="get" action="/admin/notas" class="grid">
+    <label class="field">
+      <span class="label">Rotación</span>
+      <select class="input" name="rotation_id" required>
+        {% for r in rotations %}
+          <option value="{{ r.id }}" {{ 'selected' if r.id == rotation_id else '' }}>{{ r.nombre }}</option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <label class="field">
+      <span class="label">Mes</span>
+      <select class="input" name="mes" required>
+        {% for m in meses %}
+          <option value="{{ m }}" {{ 'selected' if m == mes else '' }}>{{ m }}</option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <div><button class="btn" type="submit">Aplicar</button><a class="btn secondary" href="/admin/notas.xlsx?rotation_id={{ rotation_id }}&mes={{ mes }}">Exportar Excel</a></div>
+  </form>
+</section>
+
+<section class="card">
+  <div class="muted small">
+    Asignados vs Evaluados: la definitiva se calcula con el promedio de docentes asignados. Si faltan notas, se marca como pendiente.
+  </div>
+
+  <div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Documento</th>
+          <th>Estudiante</th>
+          <th>Rotación</th>
+          <th>Mes</th>
+          {% for i in range(teacher_slots) %}
+            <th>Docente {{ i+1 }}</th>
+            <th>Nota {{ i+1 }}</th>
+          {% endfor %}
+          <th>Evaluados</th>
+          <th>Definitiva provisional</th>
+          <th>Definitiva final</th>
+          <th>Estado</th>
+          <th>Acta</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+          <tr>
+            <td>{{ row.documento }}</td>
+            <td>{{ row.nombre }}</td>
+            <td>{{ row.rotation_nombre }}</td>
+            <td>{{ row.mes }}</td>
+
+            {% for t in row.teachers %}
+              <td>{{ t.nombre }}</td>
+              <td>
+                {% if t.nota is not none %}
+                  {{ '%.2f'|format(t.nota) }}
+                {% else %}
+                  <span class="muted">—</span>
+                {% endif %}
+              </td>
+            {% endfor %}
+
+            {# rellenar slots faltantes #}
+            {% for j in range(teacher_slots - (row.teachers|length)) %}
+              <td><span class="muted">—</span></td>
+              <td><span class="muted">—</span></td>
+            {% endfor %}
+
+            <td>{{ row.evaluados }}/{{ row.asignados }}</td>
+            <td>
+  {% if row.definitiva_provisional is not none %}
+    {{ '%.2f'|format(row.definitiva_provisional) }}
+  {% else %}
+    <span class="muted">—</span>
+  {% endif %}
+</td>
+<td>
+  {% if row.definitiva_final is not none %}
+    <b>{{ '%.2f'|format(row.definitiva_final) }}</b>
+  {% else %}
+    <span class="muted">—</span>
+  {% endif %}
+</td>
+<td>
+  {% if row.asignados == 0 %}
+    <span class="pill warn">SIN ASIGNACIÓN</span>
+  {% elif row.evaluados < row.asignados %}
+    <span class="pill warn">PENDIENTE</span>
+  {% else %}
+    <span class="pill ok">COMPLETO</span>
+  {% endif %}
+</td>
+<td>
+  {% if row.asignados > 0 %}
+    <div>
+      <a class="link" target="_blank" href="/admin/acta.pdf?student_doc={{ row.documento }}&rotation_id={{ rotation_id }}&mes={{ mes }}">PDF</a>
+      <a class="link" href="/admin/notas/detalle?student_doc={{ row.documento }}&rotation_id={{ rotation_id }}&mes={{ mes }}">Detalle</a>
+    </div>
+  {% else %}
+    <span class="muted">—</span>
+  {% endif %}
+</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

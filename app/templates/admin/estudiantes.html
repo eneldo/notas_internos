@@ -1,0 +1,176 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<header class="admin-header">
+  <div>
+    <h1 class="admin-h1">Estudiantes</h1>
+    <p class="muted">Crear, editar y eliminar estudiantes (solo ADMIN).</p>
+  </div>
+</header>
+
+<section class="card">
+  <form method="get" action="/admin/estudiantes">
+    <div>
+      <label class="muted small">Buscar (nombre / documento / universidad)</label>
+      <input class="input" type="text" name="q" value="{{ q }}" placeholder="Ej: 1023... o Juan" />
+    </div>
+    <button class="btn secondary" type="submit">Buscar</button>
+    <a class="btn" href="/admin/estudiantes">Limpiar</a>
+  </form>
+
+  <hr />
+
+  <h3>Crear estudiante</h3>
+  <form method="post" action="/admin/estudiantes/create">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div>
+      <label class="muted small">Documento</label>
+      <input class="input" name="documento" required />
+    </div>
+    <div>
+      <label class="muted small">Nombre completo</label>
+      <input class="input" name="nombre" required />
+    </div>
+    <div>
+      <label class="muted small">Universidad</label>
+      <input class="input" name="universidad" />
+    </div>
+    <div>
+      <label class="muted small">Semestre</label>
+      <input class="input" name="semestre" />
+    </div>
+    <div>
+      <label class="muted small">Estado</label>
+      <select class="input" name="activa">
+        <option value="1" selected>ACTIVO</option>
+        <option value="0">INACTIVO</option>
+      </select>
+    </div>
+    <div>
+      <button class="btn" type="submit">Guardar</button>
+      <span class="muted small">Total: <b>{{ total }}</b></span>
+    </div>
+  </form>
+</section>
+
+<section class="card">
+  <h3>Listado</h3>
+
+  {% if students|length == 0 %}
+    <p class="muted">No hay estudiantes para mostrar.</p>
+  {% else %}
+    <div>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Documento</th>
+            <th>Nombre</th>
+            <th>Universidad</th>
+            <th>Semestre</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in students %}
+          <tr>
+            <td>{{ s.id }}</td>
+            <td>{{ s.documento }}</td>
+            <td>{{ s.nombre }}</td>
+            <td>{{ s.universidad }}</td>
+            <td>{{ s.semestre }}</td>
+            <td>
+              {% if s.activa %}
+                <span class="badge ok">ACTIVO</span>
+              {% else %}
+                <span class="badge">INACTIVO</span>
+              {% endif %}
+            </td>
+            <td>
+              <div class="row-actions">
+                <button class="iconbtn" type="button" title="Editar estudiante" onclick="openStudentModal('{{ s.id }}')">✏️ Editar</button>
+
+                <form method="post" action="/admin/estudiantes/delete" class="inline-form"
+                      onsubmit="return confirm('¿Eliminar estudiante {{ s.nombre }} ({{ s.documento }})? Esta acción es irreversible.');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                  <input type="hidden" name="student_id" value="{{ s.id }}" />
+                  <button class="iconbtn dangerbtn" type="submit" title="Eliminar">🗑️ Eliminar</button>
+                </form>
+              </div>
+
+              <!-- Modal edición (igual patrón que Profesores) -->
+              <div id="sm-{{ s.id }}" class="tmodal" aria-hidden="true">
+                <div class="tmodal-backdrop" onclick="closeStudentModal('{{ s.id }}')"></div>
+                <div class="tmodal-card" role="dialog" aria-modal="true" aria-label="Editar estudiante">
+                  <div class="tmodal-head">
+                    <div>
+                      <h4 class="tmodal-title">Editar estudiante</h4>
+                      <p class="muted small">{{ s.nombre }} · {{ s.documento }}</p>
+                    </div>
+                    <button class="closebtn" type="button" onclick="closeStudentModal('{{ s.id }}')">✕</button>
+                  </div>
+
+                  <form method="post" action="/admin/estudiantes/update">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="student_id" value="{{ s.id }}" />
+
+                    <div class="edit-grid">
+                      <div>
+                        <label class="muted small">Documento</label>
+                        <input class="input" name="documento" value="{{ s.documento }}" required inputmode="numeric" pattern="\d+" />
+                      </div>
+                      <div>
+                        <label class="muted small">Estado</label>
+                        <select class="input" name="activa">
+                          <option value="1" {% if s.activa %}selected{% endif %}>ACTIVO</option>
+                          <option value="0" {% if not s.activa %}selected{% endif %}>INACTIVO</option>
+                        </select>
+                      </div>
+
+                      <div class="span2">
+                        <label class="muted small">Nombre completo</label>
+                        <input class="input" name="nombre" value="{{ s.nombre }}" required />
+                      </div>
+
+                      <div class="span2">
+                        <label class="muted small">Universidad</label>
+                        <input class="input" name="universidad" value="{{ s.universidad }}" />
+                      </div>
+
+                      <div class="span2">
+                        <label class="muted small">Semestre</label>
+                        <input class="input" name="semestre" value="{{ s.semestre }}" />
+                      </div>
+                    </div>
+
+                    <div class="actions-row">
+                      <button class="btn small" type="submit">Guardar cambios</button>
+                      <button class="btn small secondary" type="button" onclick="closeStudentModal('{{ s.id }}')">Cancelar</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div>
+      <div class="muted small">Página <b>{{ page }}</b> de <b>{{ pages }}</b></div>
+      <div>
+        {% if page > 1 %}
+          <a class="btn secondary" href="/admin/estudiantes?q={{ q }}&page={{ page-1 }}">◀ Anterior</a>
+        {% endif %}
+        {% if page < pages %}
+          <a class="btn secondary" href="/admin/estudiantes?q={{ q }}&page={{ page+1 }}">Siguiente ▶</a>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}
+
+  <script src="/static/js/admin_estudiantes.js" defer></script>

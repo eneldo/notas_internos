@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ingreso docente</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="page-head">
+        <div class="title-row">
+          <div class="app-badge">🔐</div>
+          <div>
+            <h1>Ingreso docente</h1>
+            <div class="muted">Acceso por documento y PIN.</div>
+          </div>
+        </div>
+        <div class="page-actions">
+          <a class="btn secondary" href="/"><span class="ico">🏠</span>Inicio</a>
+        </div>
+      </div>
+
+      <hr class="hr" />
+
+      {% if error %}
+        <div class="alert danger">{{ error }}</div>
+      {% endif %}
+
+      <form method="post" action="/profesor/login" class="grid-2">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="section">
+          <div class="grid-2-inner">
+            <div>
+              <label class="label">Documento</label>
+              <input class="input" name="documento" placeholder="CC / TI" required />
+            </div>
+            <div>
+              <label class="label">PIN</label>
+              <input class="input" name="pin" placeholder="****" type="password" inputmode="numeric" required />
+            </div>
+          </div>
+
+          <div class="actions">
+            <div class="muted small">Si olvidaste tu PIN, solicita restablecimiento a Administración.</div>
+            <button class="btn" type="submit"><span class="ico">➡️</span>Ingresar</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    {% include "partials/footer.html" %}
+  </div>
+</body>
+</html>

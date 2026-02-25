@@ -1,0 +1,12 @@
+.env
+data
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.venv
+venv
+.git
+.gitignore
+conexion_postgre.PNG
+daos conexion_postgre.txt

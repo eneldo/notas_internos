@@ -1,0 +1,40 @@
+{% extends "admin/base.html" %}
+{% block content %}
+<div class="card">
+  <h2 class="h2">Configurar MFA (TOTP)</h2>
+  <p>Escanea el QR con Google Authenticator / Microsoft Authenticator o una app TOTP compatible.</p>
+
+  {% if error %}
+  <div class="alert alert-error">{{ error }}</div>
+  {% endif %}
+
+  <div class="mfa-grid">
+    <div>
+      <img class="mfa-qr" src="data:image/png;base64,{{ qr_b64 }}" alt="QR MFA" />
+      <p class="muted">Si no puedes escanear, usa este secreto:</p>
+      <pre class="mfa-secret">{{ secret }}</pre>
+    </div>
+
+    <div>
+      <form method="post" action="/admin/mfa/verify">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+        <label class="label">Código (6 dígitos)</label>
+        <input class="input" name="otp" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" required />
+        <button class="btn btn-primary" type="submit">Verificar y activar</button>
+      </form>
+
+      <hr class="sep" />
+
+      <form method="post" action="/admin/mfa/disable">
+        <input type="hidden" name="csrf_token" value="{{ csrf_disable }}" />
+        <h3 class="h3">Desactivar MFA</h3>
+        <label class="label">Contraseña</label>
+        <input class="input" type="password" name="password" autocomplete="current-password" required />
+        <label class="label">OTP</label>
+        <input class="input" name="otp" inputmode="numeric" autocomplete="one-time-code" required />
+        <button class="btn" type="submit">Desactivar MFA</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

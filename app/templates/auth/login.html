@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Iniciar sesión · Calificación Internado Médico</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body class="auth-body">
+
+  <main class="auth-wrap">
+    <section class="auth-card">
+      <div class="auth-head">
+        <h1 class="auth-title">Iniciar Sesión</h1>
+        <p class="auth-sub">Selecciona tu rol e ingresa tus credenciales</p>
+      </div>
+
+      <div class="auth-toggle" role="tablist" aria-label="Tipo de ingreso">
+        <button type="button" class="auth-toggle-btn is-active" data-role="admin" aria-selected="true">🛡️ Administrador</button>
+        <button type="button" class="auth-toggle-btn" data-role="docente" aria-selected="false">🧑‍⚕️ Docente</button>
+      </div>
+
+      {% if error %}
+        <div class="auth-alert" role="alert"><strong>Error:</strong> {{ error }}</div>
+      {% endif %}
+
+      <form method="post" action="/login" class="auth-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+        <input type="hidden" name="role_hint" id="role_hint" value="admin" />
+
+        <div class="auth-field">
+          <label class="auth-label">USUARIO</label>
+          <input class="auth-input" name="username" autocomplete="username" placeholder="admin@inst.edu" required />
+        </div>
+
+        <div class="auth-field">
+          <label class="auth-label">CONTRASEÑA</label>
+          <input class="auth-input" name="password" type="password" autocomplete="current-password" placeholder="••••••••" required />
+        </div>
+
+
+<div class="auth-field">
+  <label class="auth-label">OTP (si tienes MFA)</label>
+  <input class="auth-input" name="otp" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" />
+</div>
+
+        <button class="auth-submit" type="submit">Ingresar al Sistema →</button>
+
+        <p class="auth-help">¿Problemas para ingresar? Contacta al administrador</p>
+      </form>
+    </section>
+  </main>
+
+  {% include "partials/footer.html" %}
+
+  <script src="/static/js/auth_login.js" defer></script>
+</body>
+</html>

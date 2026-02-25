@@ -1,0 +1,102 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+  <header class="admin-header">
+    <div>
+      <h1 class="admin-h1">Calificaciones</h1>
+      <p class="muted">Total: <b>{{ total }}</b> · Página {{ page }} / {{ pages }}</p>
+    </div>
+    <div class="admin-header-actions">
+      <a class="btn secondary" href="/admin">⬅️ Volver</a>
+    </div>
+  </header>
+
+  <section class="card">
+    <form method="get" class="filters">
+      <input name="q" placeholder="Buscar (nombre, documento, universidad, especialista)..." value="{{ q }}" />
+      <select name="rotation_id">
+        <option value="">Todas las rotaciones</option>
+        {% for r in rotations %}
+          <option value="{{ r.id }}" {% if rotation_id==r.id %}selected{% endif %}>{{ r.nombre }}</option>
+        {% endfor %}
+      </select>
+      <input name="mes" placeholder="Mes (Ej: Enero)" value="{{ mes }}" />
+      <select name="status">
+        <option value="" {% if status=='' %}selected{% endif %}>Todos</option>
+        <option value="abierto" {% if status=='abierto' %}selected{% endif %}>Abierto</option>
+        <option value="cerrado" {% if status=='cerrado' %}selected{% endif %}>Cerrado</option>
+        <option value="anulado" {% if status=='anulado' %}selected{% endif %}>Anulado</option>
+      </select>
+      <button class="btn" type="submit">Filtrar</button>
+      <a class="btn secondary" href="/admin/export.xlsx?q={{ q|urlencode }}&rotation_id={{ rotation_id or '' }}&mes={{ mes|urlencode }}&status={{ status|urlencode }}">Excel</a>
+      <a class="btn secondary" href="/admin/export.csv?q={{ q|urlencode }}&rotation_id={{ rotation_id or '' }}&mes={{ mes|urlencode }}&status={{ status|urlencode }}">CSV</a>
+    </form>
+  </section>
+
+  <section class="card">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Fecha</th>
+          <th>Rotación</th>
+          <th>Mes</th>
+          <th>Estudiante</th>
+          <th>Documento</th>
+          <th>Nota</th>
+          <th>Estado</th>
+          <th>PDF</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for it in items %}
+        {% set estado = 'ANULADO' if it.is_void else ('CERRADO' if it.is_closed else 'ABIERTO') %}
+        <tr>
+          <td>{{ it.id }}</td>
+          <td>{{ it.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+          <td>{{ it.rotation.nombre }}</td>
+          <td>{{ it.mes }}</td>
+          <td>{{ it.estudiante_nombre }}</td>
+          <td>{{ it.estudiante_documento }}</td>
+          <td><b>{{ '%.2f'|format(it.nota_definitiva) }}</b></td>
+          <td><span class="badge {{ 'bad' if estado=='ANULADO' else ('ok' if estado=='CERRADO' else '') }}">{{ estado }}</span></td>
+          <td><a class="link" href="/admin/rating/{{ it.id }}/pdf" target="_blank">PDF</a></td>
+          <td>
+            {% if not it.is_void %}
+              {% if not it.is_closed %}
+                <form method="post" action="/api/ratings/{{ it.id }}/close" class="js-rating-action" data-success="Nota cerrada con éxito." data-success-title="Cerrada">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                  <button class="btn tiny" type="submit">Cerrar</button>
+                </form>
+              {% else %}
+                <form method="post" action="/api/ratings/{{ it.id }}/reopen" class="js-rating-action" data-success="Nota habilitada (abierta) con éxito." data-success-title="Habilitada">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                  <input name="reason" placeholder="Motivo reapertura" />
+                  <button class="btn tiny secondary" type="submit">Reabrir</button>
+                </form>
+              {% endif %}
+              <form method="post" action="/api/ratings/{{ it.id }}/void" class="js-rating-action" data-success="Nota anulada con éxito." data-success-title="Anulada">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input name="reason" placeholder="Motivo anulación" required />
+                <button class="btn tiny danger" type="submit">Anular</button>
+              </form>
+            {% else %}
+              <span class="muted small">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="pager">
+      {% if page > 1 %}
+        <a class="btn secondary" href="?q={{ q|urlencode }}&rotation_id={{ rotation_id or '' }}&mes={{ mes|urlencode }}&status={{ status|urlencode }}&page={{ page-1 }}">Anterior</a>
+      {% endif %}
+      {% if page < pages %}
+        <a class="btn secondary" href="?q={{ q|urlencode }}&rotation_id={{ rotation_id or '' }}&mes={{ mes|urlencode }}&status={{ status|urlencode }}&page={{ page+1 }}">Siguiente</a>
+      {% endif %}
+    </div>
+  </section>
+{% endblock %}

@@ -1,0 +1,146 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+  <div class="dash-topbar">
+    <div>
+      <h1 class="dash-title">Dashboard</h1>
+      <div class="dash-sub">Resumen general del internado · {{ current_month }} {{ current_year }}</div>
+    </div>
+
+    <div class="dash-tools">
+      <div class="dash-search">
+        <span class="dash-search-ico">🔎</span>
+        <input type="text" placeholder="Buscar estudiante, docente…" disabled />
+      </div>
+      <div class="dash-pill">🗓️ {{ current_month }} {{ current_year }}</div>
+      <a class="dash-link" href="/logout">Salir →</a>
+    </div>
+  </div>
+
+  <section class="dash-kpis">
+    <div class="dash-kpi">
+      <div class="dash-kpi-ico">🎓</div>
+      <div>
+        <div class="dash-kpi-label">Estudiantes Activos</div>
+        <div class="dash-kpi-value">{{ kpi_students }}</div>
+        <div class="dash-kpi-sub">▲ {{ kpi_students_delta }} este mes</div>
+      </div>
+    </div>
+
+    <div class="dash-kpi">
+      <div class="dash-kpi-ico">🧑‍⚕️</div>
+      <div>
+        <div class="dash-kpi-label">Docentes Registrados</div>
+        <div class="dash-kpi-value">{{ kpi_teachers }}</div>
+        <div class="dash-kpi-sub">▲ {{ kpi_teachers_delta }} nuevos</div>
+      </div>
+    </div>
+
+    <div class="dash-kpi">
+      <div class="dash-kpi-ico">📝</div>
+      <div>
+        <div class="dash-kpi-label">Calificaciones Emitidas</div>
+        <div class="dash-kpi-value">{{ kpi_ratings }}</div>
+        <div class="dash-kpi-sub">▲ {{ kpi_ratings_ratio }}% completado</div>
+      </div>
+    </div>
+
+    <div class="dash-kpi">
+      <div class="dash-kpi-ico">⚠️</div>
+      <div>
+        <div class="dash-kpi-label">Pendientes de Calificar</div>
+        <div class="dash-kpi-value">{{ kpi_pending }}</div>
+        <div class="dash-kpi-sub">• Requieren atención</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="dash-grid">
+    <div class="dash-card">
+      <div class="dash-card-head">
+        <h3>Actividad Reciente</h3>
+        <span class="dash-chip">Hoy</span>
+      </div>
+
+      {% if not recent %}
+        <div class="dash-empty">Sin actividad reciente.</div>
+      {% else %}
+        <div class="dash-timeline">
+          {% for a in recent %}
+            <div class="dash-tl-item">
+              <div class="dash-tl-dot"></div>
+              <div class="dash-tl-content">
+                <div class="dash-tl-top">
+                  <div class="dash-tl-time">{{ a.time }}</div>
+                  <div class="dash-tl-title">{{ a.title }}</div>
+                </div>
+                <div class="dash-tl-sub">{{ a.sub }}</div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="dash-card">
+      <div class="dash-card-head">
+        <h3>Rotaciones Activas</h3>
+        <span class="dash-chip">En curso</span>
+      </div>
+
+      {% if not active_rotations %}
+        <div class="dash-empty">No hay rotaciones activas.</div>
+      {% else %}
+        <div class="dash-rot-list">
+          {% for r in active_rotations %}
+            <div class="dash-rot">
+              <div class="dash-rot-name">{{ r.nombre }}</div>
+              <div class="dash-rot-sub">{{ r.students }} estudiantes asignados</div>
+              <div class="dash-progress"><span></span></div>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="dash-card">
+    <div class="dash-card-head">
+      <h3>Estudiantes con Calificaciones Pendientes</h3>
+      <span class="dash-chip">{{ kpi_pending }} pendientes</span>
+    </div>
+
+    {% if not pending_rows %}
+      <div class="dash-empty">No hay pendientes por ahora.</div>
+    {% else %}
+      <div class="dash-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Estudiante</th>
+              <th>Rotación</th>
+              <th>Docente</th>
+              <th>Vencimiento</th>
+              <th>Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in pending_rows %}
+              <tr>
+                <td><strong>{{ p.estudiante_nombre }}</strong></td>
+                <td>{{ p.rotation_nombre }}</td>
+                <td>{{ p.docente }}</td>
+                <td>{{ p.vencimiento }}</td>
+                <td><span class="dash-badge warn">Pendiente</span></td>
+                <td>
+                  <a class="dash-mini" href="/admin/list?q={{ p.estudiante_documento }}">Ver</a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<header class="admin-header">
+  <div>
+    <h1 class="admin-h1">QR / Enlaces</h1>
+    <p class="muted">Genera el QR y el enlace del formulario para una rotación y mes específicos.</p>
+  </div>
+</header>
+
+<section class="card">
+  <form method="get" action="/admin/qr">
+    <div>
+      <label class="muted small">Rotación</label>
+      <select class="input" name="rotation_id">
+        {% for rot in rotations %}
+          <option value="{{ rot.id }}" {% if rot.id==selected_rotation_id %}selected{% endif %}>{{ rot.nombre }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="muted small">Mes</label>
+      <select class="input" name="mes">
+        {% for m in ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'] %}
+          <option value="{{ m }}" {% if m==mes %}selected{% endif %}>{{ m }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button class="btn secondary" type="submit">Generar</button>
+  </form>
+
+  <div class="hr"></div>
+
+  <div class="grid3">
+    <div class="card subtle">
+      <div class="tile-title">QR</div>
+      <div>
+        <img src="/qr/{{ selected_rotation_id }}?mes={{ mes }}" alt="QR" />
+      </div>
+      <p class="muted small">Escanéalo para abrir el formulario.</p>
+    </div>
+
+    <div class="card">
+      <h3>Enlace del formulario</h3>
+      <div>
+        <input class="input" id="formUrl" value="{{ form_url }}" readonly />
+        <button class="btn secondary" type="button" onclick="copyLink()">Copiar</button>
+        <a class="btn" href="{{ form_url }}" target="_blank" rel="noopener">Abrir</a>
+      </div>
+
+      <div class="hr"></div>
+
+      <h3>WhatsApp</h3>
+      <p class="muted small">Abre WhatsApp con el mensaje listo para enviar (se puede escoger contacto/grupo).</p>
+      <div class="actions">
+        <a class="btn secondary" href="{{ wa_url }}" target="_blank" rel="noopener">Enviar por WhatsApp</a>
+        <a class="btn secondary" href="/go/wa?r={{ selected_rotation_id }}&mes={{ mes }}" target="_blank" rel="noopener">WhatsApp (directo)</a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+  <script src="/static/js/admin_qr.js" defer></script>

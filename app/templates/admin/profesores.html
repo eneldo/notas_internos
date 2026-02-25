@@ -1,0 +1,253 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<header class="admin-header">
+  <div>
+    <h1 class="admin-h1">Profesores</h1>
+    <p class="muted">Crea docentes y asígnalos a estudiantes por rotación (como “materias”).</p>
+  </div>
+</header>
+
+<section class="card">
+  <form method="get" action="/admin/profesores">
+    <div>
+      <label class="muted small">Buscar (nombre / documento / especialidad)</label>
+      <input class="input" type="text" name="q" value="{{ q }}" placeholder="Ej: 1023... o Dr. Pérez" />
+    </div>
+    <button class="btn secondary" type="submit">Buscar</button>
+    <a class="btn" href="/admin/profesores">Limpiar</a>
+  </form>
+
+  <hr />
+
+  <h3>Crear profesor</h3>
+  <form method="post" action="/admin/profesores/create">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div>
+      <label class="muted small">Documento</label>
+      <input class="input" name="documento" required />
+    </div>
+    <div>
+      <label class="muted small">PIN (4–8 dígitos)</label>
+      <input class="input" name="pin" type="password" inputmode="numeric" pattern="\d{4,8}" required placeholder="Ej: 1234"/>
+    </div>
+<div>
+      <label class="muted small">Nombre completo</label>
+      <input class="input" name="nombre" required />
+    </div>
+    <div>
+      <label class="muted small">Especialidad</label>
+      <input class="input" name="especialidad" placeholder="Radiología, UCI, ..." />
+    </div>
+    <div>
+      <label class="muted small">Estado</label>
+      <select class="input" name="activo">
+        <option value="1" selected>Activo</option>
+        <option value="0">Inactivo</option>
+      </select>
+    </div>
+
+    <div>
+      <button class="btn" type="submit">Guardar profesor</button>
+    </div>
+  </form>
+</section>
+
+<section class="card">
+  <h3>Listado de profesores</h3>
+
+  <div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Documento</th>
+          <th>Nombre</th>
+          <th>Especialidad</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in teachers %}
+        <tr>
+          <td>{{ t.documento }}</td>
+          <td>{{ t.nombre }}</td>
+          <td>{{ t.especialidad }}</td>
+          <td>
+            {% if t.activo %}
+              <span class="pill ok">Activo</span>
+            {% else %}
+              <span class="pill bad">Inactivo</span>
+            {% endif %}
+          </td>
+          <td>
+            
+            <div class="row-actions">
+              <button class="iconbtn" type="button" title="Editar profesor" onclick="openTeacherModal('{{ t.id }}')">✏️ Editar</button>
+
+              <form method="post" action="/admin/profesores/delete" class="inline-form"
+                    onsubmit="return confirm('¿Eliminar profesor {{ t.nombre }} ({{ t.documento }})?\n\nSi tiene calificaciones, se recomienda INACTIVAR en vez de eliminar.');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="teacher_id" value="{{ t.id }}" />
+                <button class="iconbtn dangerbtn" type="submit" title="Eliminar">🗑️ Eliminar</button>
+              </form>
+            </div>
+
+            <!-- Modal edición (no usa <dialog> para evitar incompatibilidades/overflow) -->
+            <div id="tm-{{ t.id }}" class="tmodal" aria-hidden="true">
+              <div class="tmodal-backdrop" onclick="closeTeacherModal('{{ t.id }}')"></div>
+              <div class="tmodal-card" role="dialog" aria-modal="true" aria-label="Editar profesor">
+                <div class="tmodal-head">
+                  <div>
+                    <h4 class="tmodal-title">Editar profesor</h4>
+                    <p class="muted small">{{ t.nombre }} · {{ t.documento }}</p>
+                  </div>
+                  <button class="closebtn" type="button" onclick="closeTeacherModal('{{ t.id }}')">✕</button>
+                </div>
+
+                <form method="post" action="/admin/profesores/update">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                  <input type="hidden" name="teacher_id" value="{{ t.id }}" />
+
+                  <div class="edit-grid">
+                    <div>
+                      <label class="muted small">Documento (usuario)</label>
+                      <input class="input" name="documento" value="{{ t.documento }}" required inputmode="numeric" pattern="\d+" />
+                    </div>
+                    <div>
+                      <label class="muted small">Estado</label>
+                      <select class="input" name="activo">
+                        <option value="1" {% if t.activo %}selected{% endif %}>Activo</option>
+                        <option value="0" {% if not t.activo %}selected{% endif %}>Inactivo</option>
+                      </select>
+                    </div>
+
+                    <div class="span2">
+                      <label class="muted small">Nombre completo</label>
+                      <input class="input" name="nombre" value="{{ t.nombre }}" required />
+                    </div>
+
+                    <div class="span2">
+                      <label class="muted small">Especialidad</label>
+                      <input class="input" name="especialidad" value="{{ t.especialidad }}" placeholder="Radiología, UCI, ..." />
+                    </div>
+
+                    <div>
+                      <label class="muted small">Usuario (opcional)</label>
+                      <input class="input" name="username" value="{{ t.username or '' }}" placeholder="(si deseas cambiarlo)" />
+                    </div>
+                    <div>
+                      <label class="muted small">Nuevo PIN (4–8 dígitos)</label>
+                      <input class="input" name="pin" type="password" inputmode="numeric" pattern="\d{4,8}" placeholder="(opcional)" />
+                    </div>
+                  </div>
+
+                  <div class="actions-row">
+                    <button class="btn small" type="submit">Guardar cambios</button>
+                    <button class="btn small secondary" type="button" onclick="closeTeacherModal('{{ t.id }}')">Cancelar</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+          </td>
+        </tr>
+        {% endfor %}
+        {% if teachers|length == 0 %}
+        <tr><td colspan="5" class="muted">Sin profesores.</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="card">
+  <h3>Asignar profesores a estudiantes</h3>
+  <p class="muted small">Selecciona un estudiante y una rotación. Luego asigna 1 o varios docentes. El formulario público solo permitirá calificar con docentes asignados.</p>
+
+  <form method="get" action="/admin/profesores">
+    <input type="hidden" name="q" value="{{ q }}" />
+    <div>
+      <label class="muted small">Estudiante</label>
+      <select class="input" name="student_id" onchange="this.form.submit()">
+        {% for s in students %}
+          <option value="{{ s.id }}" {% if s.id == student_id %}selected{% endif %}>{{ s.nombre }} · {{ s.documento }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="muted small">Rotación</label>
+      <select class="input" name="rotation_id" onchange="this.form.submit()">
+        {% for r in rotations %}
+          <option value="{{ r.id }}" {% if r.id == rotation_id %}selected{% endif %}>{{ r.nombre }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </form>
+
+  <div>
+    <div>
+      <h4>Asignados</h4>
+      <div class="card">
+        {% if assigned_rows|length == 0 %}
+          <div class="muted">Aún no hay profesores asignados.</div>
+        {% else %}
+          <ul>
+            {% for row in assigned_rows %}
+              <li>
+                <div>
+                  <div><b>{{ row.teacher.nombre }}</b></div>
+                  <div class="muted small">{{ row.teacher.documento }} · {{ row.teacher.especialidad }}</div>
+                </div>
+                <form method="post" action="/admin/profesores/unassign">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                  <input type="hidden" name="assign_id" value="{{ row.id }}" />
+                  <input type="hidden" name="student_id" value="{{ student_id }}" />
+                  <input type="hidden" name="rotation_id" value="{{ rotation_id }}" />
+                  <button class="btn danger" type="submit">Quitar</button>
+                </form>
+              </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </div>
+    </div>
+
+    <div>
+      <h4>Disponibles</h4>
+      <div class="card">
+        {% if teachers|length == 0 %}
+          <div class="muted">No hay profesores creados.</div>
+        {% else %}
+          <ul>
+            {% for t in teachers %}
+              <li>
+                <div>
+                  <div><b>{{ t.nombre }}</b> {% if not t.activo %}<span class="pill bad">Inactivo</span>{% endif %}</div>
+                  <div class="muted small">{{ t.documento }} · {{ t.especialidad }}</div>
+                </div>
+                {% if t.activo and (t.id not in assigned_ids) and student_id and rotation_id %}
+                  <form method="post" action="/admin/profesores/assign">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="student_id" value="{{ student_id }}" />
+                    <input type="hidden" name="rotation_id" value="{{ rotation_id }}" />
+                    <input type="hidden" name="teacher_id" value="{{ t.id }}" />
+                    <button class="btn" type="submit">Asignar</button>
+                  </form>
+                {% elif (t.id in assigned_ids) %}
+                  <span class="pill ok">Ya asignado</span>
+                {% else %}
+                  <span class="pill">No disponible</span>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+  <script src="/static/js/admin_profesores.js" defer></script>

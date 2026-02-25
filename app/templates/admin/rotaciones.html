@@ -1,0 +1,57 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+  <header class="admin-header">
+    <div>
+      <h1 class="admin-h1">Rotaciones (Admin)</h1>
+      <p class="muted small">Base pública: <code>{{ public_base }}</code></p>
+    </div>
+    <div class="admin-header-actions">
+      <a class="btn secondary" href="/admin">⬅️ Volver</a>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2>Crear rotación</h2>
+    <form method="post" action="/admin/rotaciones/create" class="actions">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input name="nombre" placeholder="Ej: Pediatría" required />
+      <button class="btn" type="submit">Crear</button>
+    </form>
+    <p class="muted small">El QR usa el ID para evitar errores de escritura.</p>
+  </section>
+
+  <section class="card">
+    <h2>Listado</h2>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nombre</th>
+          <th>Activa</th>
+          <th>QR</th>
+          <th>WhatsApp</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rotations %}
+        <tr>
+          <td>{{ r.id }}</td>
+          <td>{{ r.nombre }}</td>
+          <td>{{ 'SI' if r.activa else 'NO' }}</td>
+          <td><a class="link" href="/qr/{{ r.id }}?mes={{ current_month }}" target="_blank">QR</a></td>
+          <td><a class="link" href="/go/wa?r={{ r.id }}&mes={{ current_month }}" target="_blank">WhatsApp</a></td>
+          <td>
+            <form method="post" action="/admin/rotaciones/toggle">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <input type="hidden" name="rotation_id" value="{{ r.id }}" />
+              <button class="btn tiny" type="submit">{{ 'Desactivar' if r.activa else 'Activar' }}</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+{% endblock %}

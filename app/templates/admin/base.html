@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ title or 'Admin' }}</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+
+<body class="admin-body">
+  <div class="admin-shell">
+    <!-- Sidebar -->
+    <aside class="admin-aside">
+      <div class="admin-brand">
+        <div class="admin-logo"></div>
+        <div>
+          <div class="admin-brand-title">HORO</div>
+          <div class="admin-brand-sub">Sistema de Calificaciones</div>
+        </div>
+      </div>
+
+      <div class="admin-user">
+        <div class="muted small">Usuario: <b>{{ user }}</b></div>
+        <div class="muted small">Rol: <b class="text-primary">{{ role|upper }}</b></div>
+        <div class="muted small">Año: <b>{{ current_year }}</b> · Mes: <b>{{ current_month }}</b></div>
+      </div>
+
+      <nav class="admin-nav">
+        <a class="admin-link {{ 'is-active' if active == 'home' else '' }}" href="/admin">Panel principal</a>
+        {% if role == 'admin' %}
+          <a class="admin-link {{ 'is-active' if active == 'estudiantes' else '' }}" href="/admin/estudiantes">Estudiantes</a>
+          <a class="admin-link {{ 'is-active' if active == 'profesores' else '' }}" href="/admin/profesores">Profesores</a>
+          <a class="admin-link {{ 'is-active' if active == 'rotaciones' else '' }}" href="/admin/rotaciones">Rotaciones</a>
+        {% endif %}
+        <a class="admin-link {{ 'is-active' if active == 'qr' else '' }}" href="/admin/qr">QR / Enlaces</a>
+        <a class="admin-link {{ 'is-active' if active == 'list' else '' }}" href="/admin/list">Calificaciones</a>
+        {% if role != 'eval' %}
+          <a class="admin-link {{ 'is-active' if active == 'notas' else '' }}" href="/admin/notas">Notas</a>
+        {% endif %}
+        <a class="admin-link {{ 'is-active' if active == 'mes' else '' }}" href="/admin/mes">Control de mes</a>
+        <a class="admin-link {{ 'is-active' if active == 'audit' else '' }}" href="/admin/auditoria">Auditoría</a>
+        <a class="admin-link {{ 'is-active' if active == 'reports' else '' }}" href="/admin/reportes">Reportes</a>
+
+        <div class="admin-sep"></div>
+        <a class="admin-link" href="/profesor/login">Portal Docente</a>
+        <a class="admin-link" href="/">Inicio</a>
+        <a class="admin-link" href="/logout">Cerrar sesión</a>
+      
+      <a class="admin-nav-link" href="/admin/mfa/setup">🔐 MFA</a>
+</nav>
+    </aside>
+
+    <!-- Main -->
+    <main class="admin-main">
+      {% block content %}{% endblock %}
+
+      <!-- ✅ Mismo pie de página del formulario -->
+      {% include "partials/footer.html" %}
+    </main>
+  </div>
+
+  <script src="/static/js/admin_base.js" defer></script>
+</body>
+</html>

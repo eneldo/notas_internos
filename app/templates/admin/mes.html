@@ -1,0 +1,91 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<header class="admin-header">
+  <div>
+    <h1 class="admin-h1">Control de mes</h1>
+    <p class="muted">Cierra o abre el mes por <b>rotación</b>. Si el mes está cerrado, el sistema bloquea nuevas calificaciones para ese mes/rotación.</p>
+  </div>
+</header>
+
+<section class="card">
+  <form method="get" action="/admin/mes">
+    <div>
+      <label class="muted small">Año</label>
+      <input class="input" type="number" name="year" value="{{ year }}" min="2000" max="2100" />
+    </div>
+    <div>
+      <label class="muted small">Mes</label>
+      <select class="input" name="mes">
+        {% for m in ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'] %}
+          <option value="{{ m }}" {% if m==mes %}selected{% endif %}>{{ m }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button class="btn secondary" type="submit">Aplicar</button>
+    <a class="btn" href="/admin/mes">Mes actual</a>
+  </form>
+
+  <div class="hr"></div>
+
+  <div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Rotación</th>
+          <th>Estado</th>
+          <th>Última acción</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        {% set rot = row.rotation %}
+        {% set mc = row.mc %}
+        <tr>
+          <td>
+            <b>{{ rot.nombre }}</b>
+            {% if not rot.activa %}<span class="badge">INACTIVA</span>{% endif %}
+          </td>
+          <td>
+            {% if mc.is_closed %}
+              <span class="badge bad">CERRADO</span>
+            {% else %}
+              <span class="badge ok">ABIERTO</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="muted small">Actor: <b>{{ mc.actor or '-' }}</b></div>
+            <div class="muted small">Actualizado: <b>{{ mc.updated_at.strftime('%Y-%m-%d %H:%M') if mc.updated_at else '-' }}</b></div>
+            {% if mc.notes %}
+              <div class="muted small">Notas: {{ mc.notes }}</div>
+            {% endif %}
+          </td>
+          <td>
+            <form method="post" action="/admin/mes/set">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <input type="hidden" name="rotation_id" value="{{ rot.id }}" />
+              <input type="hidden" name="year" value="{{ year }}" />
+              <input type="hidden" name="mes" value="{{ mes }}" />
+
+              <div>
+                <label class="muted small">Notas (opcional)</label>
+                <input class="input" name="notes" placeholder="Ej: Cierre por consolidación" />
+              </div>
+
+              {% if mc.is_closed %}
+                <input type="hidden" name="action" value="open" />
+                <button class="btn" type="submit">Abrir mes</button>
+              {% else %}
+                <input type="hidden" name="action" value="close" />
+                <button class="btn danger" type="submit" onclick="return confirm('¿Cerrar mes {{ mes }} {{ year }} para {{ rot.nombre }}? Esto bloqueará nuevas calificaciones.');">Cerrar mes</button>
+              {% endif %}
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

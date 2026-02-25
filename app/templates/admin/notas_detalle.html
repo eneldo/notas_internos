@@ -1,0 +1,88 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<header class="admin-header">
+  <div>
+    <h1 class="admin-h1">Detalle de notas por docente</h1>
+    <p class="muted">
+      Estudiante: <strong>{{ student.nombre }}</strong> · {{ student.documento }}<br/>
+      Rotación: <strong>{{ rotation.nombre }}</strong> · Mes: <strong>{{ mes }}</strong>
+    </p>
+    <div>
+      <span class="pill">{{ evaluados }}/{{ asignados }} evaluados</span>
+      {% if definitiva_provisional is not none %}
+        <span class="pill">Provisional: <b>{{ '%.2f'|format(definitiva_provisional) }}</b></span>
+      {% else %}
+        <span class="pill warn">Sin notas</span>
+      {% endif %}
+      {% if definitiva_final is not none %}
+        <span class="pill ok">Final: <b>{{ '%.2f'|format(definitiva_final) }}</b></span>
+      {% else %}
+        <span class="pill warn">Final pendiente</span>
+      {% endif %}
+    </div>
+  </div>
+  <div>
+    <a class="btn secondary" href="/admin/notas?rotation_id={{ rotation.id }}&mes={{ mes }}">Volver</a>
+    <a class="btn" target="_blank" href="/admin/acta.pdf?student_doc={{ student.documento }}&rotation_id={{ rotation.id }}&mes={{ mes }}">PDF</a>
+  </div>
+</header>
+
+<section class="card">
+  <div class="grid">
+    {% for it in items %}
+      {% set t = it.teacher %}
+      {% set r = it.rating %}
+      <div class="card">
+        <div>
+          <div>
+            <div>👨‍⚕️ {{ t.nombre }}</div>
+            <div class="muted">Doc: {{ t.documento }}{% if t.especialidad %} · {{ t.especialidad }}{% endif %}</div>
+          </div>
+          {% if r %}
+            <span class="pill ok">CALIFICADO</span>
+          {% else %}
+            <span class="pill warn">PENDIENTE</span>
+          {% endif %}
+        </div>
+
+        <hr class="hr" />
+
+        {% if r %}
+          <div class="grid">
+            <div class="muted">Área cognitiva (20%)</div><div><b>{{ '%.2f'|format(r.cognitiva) }}</b></div>
+            <div class="muted">Área aptitudinal (20%)</div><div><b>{{ '%.2f'|format(r.aptitudinal) }}</b></div>
+            <div class="muted">Área actitudinal (20%)</div><div><b>{{ '%.2f'|format(r.actitudinal) }}</b></div>
+            <div class="muted">Evaluación (20%)</div><div><b>{{ '%.2f'|format(r.evaluacion) }}</b></div>
+            <div class="muted">Participación CPC (20%)</div><div><b>{{ '%.2f'|format(r.cpc) }}</b></div>
+            <div class="muted">% fallas</div><div><b>{{ '%.2f'|format(r.porcentaje_fallas) }}</b></div>
+          </div>
+
+          <div>
+            <div class="muted">Nota definitiva</div>
+            <div class="pill {% if r.pierde_por_fallas %}warn{% else %}ok{% endif %}">
+              {{ '%.2f'|format(r.nota_definitiva) }}
+              {% if r.pierde_por_fallas %} · por fallas{% endif %}
+            </div>
+          </div>
+
+          {% if r.comentarios %}
+            <div>
+              <div class="muted">Comentarios</div>
+              <div>{{ r.comentarios }}</div>
+            </div>
+          {% endif %}
+
+          <div class="muted">
+            Registrado: {{ r.created_at.strftime('%Y-%m-%d %H:%M') if r.created_at else '' }}
+            {% if r.actor %} · Por: {{ r.actor }}{% endif %}
+          </div>
+        {% else %}
+          <div class="muted">Aún no hay calificación registrada por este docente para este mes.</div>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+</section>
+
+{% endblock %}

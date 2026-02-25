@@ -1,0 +1,89 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<header class="admin-header">
+  <div>
+    <h1 class="admin-h1">Auditoría</h1>
+    <p class="muted">Registro de acciones del sistema (calificaciones y acciones administrativas).</p>
+  </div>
+</header>
+
+<section class="card">
+  <div>
+    <div>
+      <label class="muted small">Tipo</label>
+      <div>
+        <a class="btn secondary" href="/admin/auditoria?tipo=ratings&q={{ q }}">Calificaciones</a>
+        <a class="btn secondary" href="/admin/auditoria?tipo=admin&q={{ q }}">Administración</a>
+      </div>
+    </div>
+
+    <form method="get" action="/admin/auditoria">
+      <input type="hidden" name="tipo" value="{{ tipo }}" />
+      <div>
+        <label class="muted small">Buscar (actor / acción / detalle)</label>
+        <input class="input" type="text" name="q" value="{{ q }}" placeholder="Ej: CLOSE, admin, documento..." />
+      </div>
+      <button class="btn secondary" type="submit">Buscar</button>
+      <a class="btn" href="/admin/auditoria?tipo={{ tipo }}">Limpiar</a>
+    </form>
+  </div>
+
+  <div class="hr"></div>
+
+  <div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          {% if tipo == 'admin' %}
+            <th>Módulo</th>
+            <th>Acción</th>
+            <th>Actor</th>
+            <th>Detalles</th>
+          {% else %}
+            <th>Rating ID</th>
+            <th>Acción</th>
+            <th>Actor</th>
+            <th>Detalles</th>
+          {% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% if items|length == 0 %}
+          <tr><td colspan="5" class="muted">Sin registros.</td></tr>
+        {% else %}
+          {% for it in items %}
+            <tr>
+              <td>{{ it.created_at.strftime('%Y-%m-%d %H:%M') if it.created_at else '-' }}</td>
+              {% if tipo == 'admin' %}
+                <td><b>{{ it.module }}</b></td>
+                <td>{{ it.action }}</td>
+                <td>{{ it.actor }}</td>
+                <td class="muted">{{ it.details }}</td>
+              {% else %}
+                <td><b>{{ it.rating_id }}</b></td>
+                <td>{{ it.action }}</td>
+                <td>{{ it.actor }}</td>
+                <td class="muted">{{ it.details }}</td>
+              {% endif %}
+            </tr>
+          {% endfor %}
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <div>
+    <div class="muted small">Total: <b>{{ total }}</b> · Página <b>{{ page }}</b> de <b>{{ pages }}</b></div>
+    <div>
+      {% if page > 1 %}
+        <a class="btn secondary" href="/admin/auditoria?tipo={{ tipo }}&q={{ q }}&page={{ page-1 }}">◀ Anterior</a>
+      {% endif %}
+      {% if page < pages %}
+        <a class="btn secondary" href="/admin/auditoria?tipo={{ tipo }}&q={{ q }}&page={{ page+1 }}">Siguiente ▶</a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

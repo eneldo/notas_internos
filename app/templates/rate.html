@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Calificar interno</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <main class="container">
+    <header class="card">
+      <h1>DS-F-01 · Calificación Internado Médico</h1>
+      <p class="muted">
+        Califique 0.0–5.0 (20% c/u). Si fallas &gt; 10% ⇒ 0.0.
+        <br>
+        <b>Rotación:</b> <span id="rotacionLabel">—</span> · <b>Mes:</b> <span id="mesLabel">—</span>
+      </p>
+
+      <div class="actions">
+        <a class="btn secondary" id="btnWA" href="#">📲 Compartir por WhatsApp</a>
+        <a class="btn secondary" id="btnQR" href="#" target="_blank">🔳 Ver QR</a>
+        <a class="btn secondary" href="/">🏠 Inicio</a>
+      </div>
+    </header>
+
+    <!-- ✅ ALERTA: ESTUDIANTE NO REGISTRADO -->
+    <div id="studentNotFoundBox" class="section-card alert-card">
+      <div class="section-title">
+        <span class="dot"></span>
+        <span>Estudiante no registrado</span>
+      </div>
+      <div class="alert-body">
+        <div class="alert-icon">⛔</div>
+        <div>
+          <div class="alert-title">El documento no existe en el módulo <b>Administrador → Estudiantes</b>.</div>
+          <div class="muted">No es posible calificar hasta que el Administrador cree/active el estudiante.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ✅ ALERTA DUPLICADO -->
+    <div id="duplicateBox" class="section-card alert-card">
+      <div class="section-title">
+        <span class="dot"></span>
+        <span>Registro existente</span>
+      </div>
+      <div class="alert-body">
+        <div class="alert-icon">⚠️</div>
+        <div>
+          <div class="alert-title">Este interno ya fue calificado por ESTE profesor.</div>
+          <div class="muted">
+            Si desea volver a calificar, diríjase con el <b>Administrador</b>.
+            <span id="duplicateMeta" class="muted small"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-layout">
+      <form id="rateForm" class="form">
+        <section class="section-card">
+          <div class="section-title"><span class="dot"></span><span>Datos del estudiante</span></div>
+
+          <div class="grid2">
+            <label>
+              <div class="label-row"><span class="icon">👤</span><span>Nombre estudiante</span></div>
+              <input name="estudiante_nombre" id="estudianteNombre" required minlength="3" placeholder="(se autocompleta)" readonly />
+            </label>
+
+            <label>
+              <div class="label-row"><span class="icon">🪪</span><span>Documento identidad</span></div>
+              <div>
+                <input name="estudiante_documento" id="estudianteDocumento" list="studentsDatalist" required minlength="3" placeholder="Ej: 1234567890" autocomplete="off" />
+                <button class="btn secondary" type="button" id="btnBuscarEst" title="Buscar y autocompletar">🔎</button>
+                <button class="btn secondary" type="button" id="btnOpenStudents" title="Ver lista de estudiantes">📋</button>
+              </div>
+              <datalist id="studentsDatalist"></datalist>
+              <small class="muted small">
+                Selecciona un estudiante creado en <b>Administrador → Estudiantes</b>.
+                Al ingresar el documento se valida si ya existe calificación.
+              </small>
+            </label>
+
+            <label>
+              <div class="label-row"><span class="icon">🏛️</span><span>Universidad</span></div>
+              <input name="universidad" id="universidad" required minlength="2" placeholder="(se autocompleta)" readonly />
+            </label>
+
+            <label>
+              <div class="label-row"><span class="icon">🎓</span><span>Semestre</span></div>
+              <input name="semestre" id="semestre" required placeholder="(se autocompleta)" readonly />
+            </label>
+
+            <label>
+              <div class="label-row"><span class="icon">🗓️</span><span>Mes</span></div>
+              <select name="mes" id="mesSelect" required>
+                {% for m in meses %}
+                  <option value="{{ m }}" {% if m == mes_prefill %}selected{% endif %}>{{ m }}</option>
+                {% endfor %}
+              </select>
+              <small class="muted small">Por defecto toma el mes actual del sistema.</small>
+            </label>
+
+            <label>
+              <div class="label-row"><span class="icon">🏥</span><span>Rotación</span></div>
+              <select name="rotation_id" id="rotSelect" required>
+                {% for rot in rotations %}
+                  <option value="{{ rot.id }}" {% if rot.id == selected_rotation_id %}selected{% endif %}>{{ rot.nombre }}</option>
+                {% endfor %}
+              </select>
+              <small class="muted small">Si llegaste por QR, viene preseleccionada. Puedes cambiarla si hace falta.</small>
+            </label>
+          </div>
+        </section>
+
+        <section class="section-card">
+          <div class="section-title"><span class="dot"></span><span>Áreas a evaluar (0.0 – 5.0)</span></div>
+
+          <div class="grid2">
+            <label><div class="label-row"><span class="icon">🧠</span><span>Área cognitiva (20%)</span></div>
+              <input type="number" name="cognitiva" min="0" max="5" step="0.1" required />
+            </label>
+
+            <label><div class="label-row"><span class="icon">🧰</span><span>Área aptitudinal (20%)</span></div>
+              <input type="number" name="aptitudinal" min="0" max="5" step="0.1" required />
+            </label>
+
+            <label><div class="label-row"><span class="icon">🤝</span><span>Área actitudinal (20%)</span></div>
+              <input type="number" name="actitudinal" min="0" max="5" step="0.1" required />
+            </label>
+
+            <label><div class="label-row"><span class="icon">📝</span><span>Evaluación (20%)</span></div>
+              <input type="number" name="evaluacion" min="0" max="5" step="0.1" required />
+            </label>
+
+            <label><div class="label-row"><span class="icon">👥</span><span>Participación CPC (20%)</span></div>
+              <input type="number" name="cpc" min="0" max="5" step="0.1" required />
+            </label>
+
+            <label><div class="label-row"><span class="icon">⏱️</span><span>% fallas en la rotación</span></div>
+              <input type="number" name="porcentaje_fallas" min="0" max="100" step="0.1" value="0" required />
+              <small class="muted small">Si es &gt; 10%, la nota final será 0.0.</small>
+            </label>
+          </div>
+        </section>
+
+        <section class="section-card">
+          <div class="section-title"><span class="dot"></span><span>Firmas</span></div>
+
+          <div class="grid2">
+            <label><div class="label-row"><span class="icon">👨‍🏫</span><span>Docente evaluador</span></div>
+              <select id="teacherSel" class="input" required>
+                <option value="">— Seleccione un docente —</option>
+              </select>
+              <div id="teacherHint" class="muted small">Los docentes disponibles dependen del estudiante y la rotación (asignados por ADMIN).</div>
+            </label>
+
+            <label><div class="label-row"><span class="icon">👨‍⚕️</span><span>Especialista (nombre)</span></div>
+              <input name="especialista_nombre" id="especialistaNombre" required minlength="3" readonly />
+            </label>
+
+            <label><div class="label-row"><span class="icon">🪪</span><span>Especialista (documento)</span></div>
+              <input name="especialista_documento" id="especialistaDocumento" required minlength="3" readonly />
+            </label>
+
+            <label><div class="label-row"><span class="icon">🧑‍💼</span><span>Coordinador área (nombre)</span></div>
+              <input name="coordinador_nombre" required minlength="3" />
+            </label>
+
+            <label><div class="label-row"><span class="icon">✍️</span><span>Firma estudiante (nombre)</span></div>
+              <input name="estudiante_firma_nombre" required minlength="3" />
+            </label>
+
+            <label><div class="label-row"><span class="icon">💬</span><span>Comentarios (opcional)</span></div>
+              <textarea name="comentarios" rows="3" maxlength="2000"></textarea>
+            </label>
+          </div>
+        </section>
+
+        <section class="section-card subtle">
+          <div class="actions">
+            <button class="btn" type="submit" id="btnSubmit">✅ Enviar / Guardar calificación</button>
+            <button class="btn secondary" type="button" id="btnLimpiar">🧾 Nueva calificación</button>
+          </div>
+
+          <div class="hr"></div>
+          <p class="muted small" id="msg"></p>
+          <p class="muted small"><b>Nota:</b> Para guardar se requiere autenticación Basic (EVAL/COORD/ADMIN).</p>
+        </section>
+      </form>
+
+      <aside class="sidebar">
+        <section class="section-card">
+          <div class="section-title"><span class="dot"></span><span>Resumen</span></div>
+
+          <div class="kpi-box">
+            <div class="kpi">
+              <div class="kpi-left">
+                <div class="kpi-title">Nota definitiva</div>
+                <div class="kpi-value" id="notaDef">—</div>
+              </div>
+              <span class="pill" id="pillEstado">—</span>
+            </div>
+
+            <div class="kpi">
+              <div class="kpi-left">
+                <div class="kpi-title">Regla de fallas</div>
+                <div id="reglaFallas">—</div>
+              </div>
+            </div>
+
+            <div class="hr"></div>
+
+            <div class="kpi">
+              <div class="kpi-left">
+                <div class="kpi-title">Rotación</div>
+                <div id="sbRotacion">—</div>
+              </div>
+            </div>
+
+            <div class="kpi">
+              <div class="kpi-left">
+                <div class="kpi-title">Mes</div>
+                <div id="sbMes">—</div>
+              </div>
+            </div>
+
+            <div class="kpi">
+              <div class="kpi-left">
+                <div class="kpi-title">Estudiante</div>
+                <div id="sbEstudiante">—</div>
+                <div class="muted small" id="sbDocumento">—</div>
+              </div>
+            </div>
+
+            <div class="hr"></div>
+
+            <div class="actions">
+              <a class="btn secondary" id="btnWA2" href="#">📲 WhatsApp</a>
+              <a class="btn secondary" id="btnQR2" href="#" target="_blank">🔳 QR</a>
+            </div>
+
+            <p class="muted small">
+              Consejo: Revisa el resumen antes de enviar.
+            </p>
+          </div>
+        </section>
+      </aside>
+    </div>
+
+    <footer class="footer">
+      <span class="muted">Implementación digital DS-F-01 · v3</span>
+    </footer>
+  </main>
+<!-- ✅ MODAL: Lista de estudiantes (solo lectura) + estado calificado mes/rotación -->
+  <div id="studentsModal" class="modal-backdrop">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="studentsModalTitle">
+      <div class="modal-header">
+        <h3 id="studentsModalTitle">Estudiantes (solo lectura)</h3>
+        <button type="button" class="btn secondary" id="btnCloseStudents" title="Cerrar">✖</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="modal-tools">
+          <input id="studentsSearch" type="text" placeholder="Buscar por documento, nombre o universidad..." autocomplete="off" />
+          <button type="button" class="btn secondary" id="btnReloadStudents">🔄 Recargar</button>
+        </div>
+
+        <div class="modal-hint muted small">
+          Tip: clic en un estudiante para seleccionarlo (autocompleta el formulario). La columna <b>Calificado</b> se calcula con el <b>Mes</b> y la <b>Rotación</b> actualmente seleccionados.
+        </div>
+
+        <div class="table-wrap">
+          <table class="table" id="studentsTable">
+            <thead>
+              <tr>
+                <th>Documento</th>
+                <th>Nombre</th>
+                <th>Universidad</th>
+                <th>Semestre</th>
+                <th>Estado</th>
+                <th>Calificado</th>
+              </tr>
+            </thead>
+            <tbody id="studentsTbody">
+              <tr><td colspan="6" class="muted">Cargando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <span class="muted small" id="studentsCount">—</span>
+        <button type="button" class="btn secondary" id="btnCloseStudents2">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cache-busting para evitar que Chrome use un app.js viejo -->
+  <script src="/static/app.js?v=20260116"></script>
+
+  {% include "partials/footer.html" %}
+
+  <script src="/static/js/rate.js" defer></script>
+</body>
+</html>

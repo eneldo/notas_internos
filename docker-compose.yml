@@ -1,0 +1,59 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-B_D_Internos}
+      POSTGRES_USER: ${POSTGRES_USER:-internos_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+    volumes:
+      - internos_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-internos_user} -d ${POSTGRES_DB:-B_D_Internos}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ENV: ${ENV:-production}
+      APP_SECRET_KEY: ${APP_SECRET_KEY}
+      DATABASE_URL: ${DATABASE_URL}
+      INIT_ADMIN_USER: ${INIT_ADMIN_USER:-admin}
+      INIT_ADMIN_PASS: ${INIT_ADMIN_PASS}
+      # Optional coordinator
+      INIT_COORD_USER: ${INIT_COORD_USER:-}
+      INIT_COORD_PASS: ${INIT_COORD_PASS:-}
+      # Host config behind Traefik
+      DOMAIN: ${DOMAIN}
+    # En Dokploy/Traefik no necesitas exponer puertos.
+    # Para debug local puedes descomentar:
+    # ports:
+    #   - "8000:8000"
+    volumes:
+      - internos_data:/app/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.notas_internos.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.notas_internos.entrypoints=websecure"
+      - "traefik.http.routers.notas_internos.tls=true"
+      - "traefik.http.services.notas_internos.loadbalancer.server.port=8000"
+
+      # Middlewares de seguridad (headers) — recomendado ponerlos aquí o en Dokploy UI
+      - "traefik.http.routers.notas_internos.middlewares=notas_internos-secure-headers@docker"
+      - "traefik.http.middlewares.notas_internos-secure-headers.headers.forceSTSHeader=true"
+      - "traefik.http.middlewares.notas_internos-secure-headers.headers.stsSeconds=31536000"
+      - "traefik.http.middlewares.notas_internos-secure-headers.headers.stsIncludeSubdomains=true"
+      # ⚠ Solo activa stsPreload si vas a cumplir requisitos de preload (HTTPS en dominio y subdominios).
+      - "traefik.http.middlewares.notas_internos-secure-headers.headers.stsPreload=false"
+      - "traefik.http.middlewares.notas_internos-secure-headers.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.notas_internos-secure-headers.headers.frameDeny=true"
+      - "traefik.http.middlewares.notas_internos-secure-headers.headers.referrerPolicy=strict-origin-when-cross-origin"
+      - "traefik.http.middlewares.notas_internos-secure-headers.headers.permissionsPolicy=geolocation=(), microphone=(), camera=()"
+
+volumes:
+  internos_pg:
+  internos_data:

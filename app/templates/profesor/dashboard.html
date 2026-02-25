@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ title or 'Portal Docente' }}</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body class="tch-body">
+
+  <!-- Toast -->
+  <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true">
+    <div id="toastIcon" class="toast-icon">✅</div>
+    <div>
+      <div id="toastTitle" class="toast-title">Listo</div>
+      <div id="toastMsg" class="toast-msg">Acción realizada.</div>
+    </div>
+  </div>
+
+  <div class="tch-shell">
+    <aside class="tch-aside">
+      <div class="tch-brand">
+        <div class="tch-logo">🎓</div>
+        <div>
+          <div class="tch-brand-title">Portal Docente</div>
+          <div class="tch-brand-sub">Calificación Internado · DS‑F‑01</div>
+        </div>
+      </div>
+
+      <div class="tch-user">
+        <div class="muted small">Docente</div>
+        <div>{{ teacher.nombre }}</div>
+        <div class="muted small">Año: <b>{{ year }}</b> · Mes: <b>{{ mes }}</b></div>
+      </div>
+
+      <nav class="tch-nav">
+        <a class="tch-link is-active" href="/profesor">Dashboard</a>
+        <a class="tch-link" href="/">Inicio</a>
+        <a class="tch-link" href="/profesor/logout">Cerrar sesión</a>
+      </nav>
+
+      <div class="tch-foot">
+        <div class="muted small">Tip: filtra por rotación y mes para ver tus asignaciones.</div>
+      </div>
+    </aside>
+
+    <main class="tch-main">
+      <div class="dash-topbar">
+        <div>
+          <h1 class="dash-title">Dashboard</h1>
+          <div class="dash-sub">Bienvenido, {{ teacher.nombre }}</div>
+        </div>
+
+        <div class="dash-tools">
+          <form method="get" action="/profesor" class="dash-inline">
+            <select class="dash-select" name="rotation_id">
+              <option value="0">Todas las rotaciones</option>
+              {% for r in rotations %}
+                <option value="{{ r.id }}" {% if r.id==rotation_id %}selected{% endif %}>{{ r.nombre }}</option>
+              {% endfor %}
+            </select>
+            <input class="dash-select" name="mes" value="{{ mes }}" placeholder="Enero" />
+            <button class="dash-mini" type="submit">Aplicar</button>
+          </form>
+          <a class="dash-link" href="/profesor/logout">Salir →</a>
+        </div>
+      </div>
+
+      <section class="dash-kpis">
+        <div class="dash-kpi">
+          <div class="dash-kpi-ico">📋</div>
+          <div>
+            <div class="dash-kpi-label">Total asignados</div>
+            <div class="dash-kpi-value">{{ kpi_total }}</div>
+            <div class="dash-kpi-sub">Con filtros aplicados</div>
+          </div>
+        </div>
+        <div class="dash-kpi">
+          <div class="dash-kpi-ico">⏳</div>
+          <div>
+            <div class="dash-kpi-label">Pendientes (mías)</div>
+            <div class="dash-kpi-value">{{ kpi_pending }}</div>
+            <div class="dash-kpi-sub">Aún no calificadas</div>
+          </div>
+        </div>
+        <div class="dash-kpi">
+          <div class="dash-kpi-ico">✅</div>
+          <div>
+            <div class="dash-kpi-label">Calificadas (mías)</div>
+            <div class="dash-kpi-value">{{ kpi_done }}</div>
+            <div class="dash-kpi-sub">Registradas en el sistema</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="dash-grid">
+        <div class="dash-card">
+          <div class="dash-card-head">
+            <h3>Actividad reciente</h3>
+            <span class="dash-chip">Últimas</span>
+          </div>
+          {% if not recent_my %}
+            <div class="dash-empty">Aún no registras calificaciones recientes.</div>
+          {% else %}
+            <div class="dash-timeline">
+              {% for a in recent_my %}
+                <div class="dash-tl-item">
+                  <div class="dash-tl-dot"></div>
+                  <div class="dash-tl-content">
+                    <div class="dash-tl-top">
+                      <div class="dash-tl-time">{{ a.time }}</div>
+                      <div class="dash-tl-title">{{ a.title }}</div>
+                    </div>
+                    <div class="dash-tl-sub">{{ a.sub }}</div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+
+        <div class="dash-card">
+          <div class="dash-card-head">
+            <h3>Accesos rápidos</h3>
+            <span class="dash-chip">Acción</span>
+          </div>
+          <div class="dash-quick">
+            <a class="dash-quick-btn" href="/">🏠 Volver al inicio</a>
+            <a class="dash-quick-btn" href="/profesor/logout">🚪 Cerrar sesión</a>
+          </div>
+          <div class="dash-hint">Si no ves estudiantes, pide a Administración que te asigne en el módulo <b>Profesores</b>.</div>
+        </div>
+      </section>
+
+      <section class="dash-card">
+        <div class="dash-card-head">
+          <h3>Mis estudiantes asignados</h3>
+          <span class="dash-chip">{{ kpi_total }} registros</span>
+        </div>
+
+        {% if not rows %}
+          <div class="dash-empty">Sin asignaciones activas en este filtro.</div>
+        {% else %}
+          <div class="dash-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Estudiante</th>
+                  <th>Documento</th>
+                  <th>Rotación</th>
+                  <th>Mes</th>
+                  <th>Mi estado</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in rows %}
+                <tr>
+                  <td><strong>{{ row.student.nombre }}</strong></td>
+                  <td>{{ row.student.documento }}</td>
+                  <td>{{ row.rotation.nombre }}</td>
+                  <td>{{ row.mes }}</td>
+                  <td>
+                    {% if row.my_done %}
+                      <span class="dash-badge ok">Calificado</span>
+                    {% else %}
+                      <span class="dash-badge warn">Pendiente</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if row.my_done %}
+                      <a class="dash-mini" href="/profesor/calificar?student_id={{ row.student.id }}&rotation_id={{ row.rotation.id }}&mes={{ row.mes }}">Ver / Editar</a>
+                    {% else %}
+                      {% if row.can_create %}
+                        <a class="dash-mini" href="/profesor/calificar?student_id={{ row.student.id }}&rotation_id={{ row.rotation.id }}&mes={{ row.mes }}">Calificar</a>
+                      {% else %}
+                        <span class="dash-badge muted">Mes cerrado</span>
+                      {% endif %}
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+      </section>
+
+      {% include "partials/footer.html" %}
+    </main>
+  </div>
+
+  <script src="/static/js/profesor_dashboard.js" defer></script>
+</body>
+</html>

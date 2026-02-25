@@ -1,0 +1,160 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<header class="admin-header">
+  <div>
+    <h1 class="admin-h1">Reportes</h1>
+    <p class="muted">Consulta y exporta resultados (CSV / Excel). Usa filtros por rotaci贸n, mes y estado.</p>
+  </div>
+
+  <div class="admin-header-actions">
+    <a class="btn secondary" href="/admin/export.xlsx?q={{ q }}&rotation_id={{ rotation_id or '' }}&mes={{ mes }}&status={{ status }}">馃搳 Excel</a>
+    <a class="btn secondary" href="/admin/export.csv?q={{ q }}&rotation_id={{ rotation_id or '' }}&mes={{ mes }}&status={{ status }}">馃Ь CSV</a>
+    <a class="btn" href="/admin/list?q={{ q }}&rotation_id={{ rotation_id or '' }}&mes={{ mes }}&status={{ status }}">Abrir listado</a>
+  </div>
+</header>
+
+<section class="card subtle">
+  <div class="grid3">
+    <div class="tile">
+      <div class="tile-title">Total registros</div>
+      <div>{{ total }}</div>
+    </div>
+    <div class="tile">
+      <div class="tile-title">Promedio</div>
+      <div>{% if avg %}{{ '%.2f'|format(avg) }}{% else %}-{% endif %}</div>
+    </div>
+    <div class="tile">
+      <div class="tile-title">Estados</div>
+      <div class="muted small">Abiertos: <b>{{ abiertos }}</b> 路 Cerrados: <b>{{ cerrados }}</b> 路 Anulados: <b>{{ anulados }}</b></div>
+    </div>
+  </div>
+</section>
+
+<section class="card">
+  <h3>Filtros</h3>
+  <form method="get" action="/admin/reportes" class="filters">
+    <div>
+      <label class="muted small">Buscar</label>
+      <input class="input" name="q" value="{{ q }}" placeholder="Nombre / documento / universidad / especialista" />
+    </div>
+    <div>
+      <label class="muted small">Rotaci贸n</label>
+      <select class="input" name="rotation_id">
+        <option value="">Todas</option>
+        {% for rot in rotations %}
+          <option value="{{ rot.id }}" {% if rotation_id and rot.id == rotation_id %}selected{% endif %}>{{ rot.nombre }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="muted small">Mes</label>
+      <select class="input" name="mes">
+        <option value="">Todos</option>
+        {% for m in ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'] %}
+          <option value="{{ m }}" {% if m==mes %}selected{% endif %}>{{ m }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="muted small">Estado</label>
+      <select class="input" name="status">
+        <option value="" {% if not status %}selected{% endif %}>Todos</option>
+        <option value="abierto" {% if status=='abierto' %}selected{% endif %}>Abierto</option>
+        <option value="cerrado" {% if status=='cerrado' %}selected{% endif %}>Cerrado</option>
+        <option value="anulado" {% if status=='anulado' %}selected{% endif %}>Anulado</option>
+      </select>
+    </div>
+    <button class="btn secondary" type="submit">Aplicar</button>
+    <a class="btn" href="/admin/reportes">Limpiar</a>
+  </form>
+
+  <div class="hr"></div>
+
+  <p class="muted small">Tip: usa <b>Exportar Excel/CSV</b> con los filtros aplicados para generar el reporte final.</p>
+
+  <div class="hr"></div>
+
+  <h3>Vista previa</h3>
+  <p class="muted small">Muestra hasta 25 registros del resultado filtrado. Usa <b>Abrir listado</b> para ver todo.</p>
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Fecha</th>
+        <th>Rotaci贸n</th>
+        <th>Mes</th>
+        <th>Estudiante</th>
+        <th>Documento</th>
+        <th>Nota</th>
+        <th>Estado</th>
+        <th>PDF</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% if preview and preview|length > 0 %}
+        {% for it in preview %}
+          {% set estado = 'ANULADO' if it.is_void else ('CERRADO' if it.is_closed else 'ABIERTO') %}
+          <tr>
+            <td>{{ it.id }}</td>
+            <td>{{ it.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td>{{ it.rotation.nombre }}</td>
+            <td>{{ it.mes }}</td>
+            <td><b>{{ it.estudiante_nombre }}</b></td>
+            <td>{{ it.estudiante_documento }}</td>
+            <td><b>{{ '%.2f'|format(it.nota_definitiva) }}</b></td>
+            <td><span class="badge {{ 'bad' if estado=='ANULADO' else ('ok' if estado=='CERRADO' else '') }}">{{ estado }}</span></td>
+            <td><a class="link" href="/admin/rating/{{ it.id }}/pdf" target="_blank">PDF</a></td>
+          </tr>
+        {% endfor %}
+      {% else %}
+        <tr><td colspan="9" class="muted">Sin resultados para los filtros actuales.</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+
+
+<div class="hr"></div>
+
+<h3>Consolidado por estudiante (promedio de profesores)</h3>
+<p class="muted small">
+  Agrupa por <b>Documento + Rotación + Mes</b> y calcula el promedio de las notas registradas por diferentes profesores
+  (no incluye anulados).
+</p>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Año</th>
+      <th>Rotación</th>
+      <th>Mes</th>
+      <th>Estudiante</th>
+      <th>Documento</th>
+      <th># Profes</th>
+      <th>Promedio</th>
+      <th>Estado</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% if consolidated and consolidated|length > 0 %}
+      {% for c in consolidated %}
+        <tr>
+          <td>{{ c.year }}</td>
+          <td>{{ c.rotacion }}</td>
+          <td>{{ c.mes }}</td>
+          <td><b>{{ c.nombre }}</b></td>
+          <td>{{ c.documento }}</td>
+          <td>{{ c.n_profes }}</td>
+          <td>{% if c.promedio is not none %}{{ '%.2f'|format(c.promedio) }}{% else %}-{% endif %}</td>
+          <td>{{ c.estado }}</td>
+        </tr>
+      {% endfor %}
+    {% else %}
+      <tr><td colspan="8" class="muted">Sin datos para consolidar con los filtros actuales.</td></tr>
+    {% endif %}
+  </tbody>
+</table>
+
+</section>
+{% endblock %}

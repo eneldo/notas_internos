@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Calificar · Portal Docente</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body data-already-done="{{ 'true' if already_done else 'false' }}">
+  <div class="container">
+    <div class="card">
+      <div class="page-head">
+        <div class="title-row">
+          <div class="app-badge">📝</div>
+          <div>
+            <h1>Calificación docente</h1>
+            <div class="muted"><strong>{{ teacher.nombre }}</strong> · {{ rotation.nombre }} · {{ mes }} / {{ year }}</div>
+          </div>
+        </div>
+        <div class="page-actions">
+          <a class="btn secondary" href="/profesor?rotation_id={{ rotation.id }}&mes={{ mes }}"><span class="ico">↩️</span>Volver</a>
+          <a class="btn" href="/profesor/logout"><span class="ico">🚪</span>Cerrar sesión</a>
+        </div>
+      </div>
+
+      <hr class="hr" />
+
+      <div class="alert info">
+        <strong>Estudiante:</strong> {{ student.nombre }} · {{ student.documento }}
+      </div>
+
+      {% if saved %}
+        <div class="alert ok">
+          <strong>✅ Calificación guardada</strong><br/>
+          Tu evaluación fue registrada correctamente. Puedes verificar el desglose y la nota definitiva en el panel de resumen.
+        </div>
+      {% endif %}
+
+      {% if already_done and locked %}
+        <div class="alert ok">
+          <strong>✅ Evaluación registrada y cerrada</strong><br/>
+          Ya registraste tu evaluación para este estudiante en esta rotación y mes.
+          Si necesitas una corrección, solicita al Administrador/Coordinación que <strong>reabra</strong> la calificación.
+        </div>
+      {% endif %}
+      {% if allow_edit %}
+        <div class="alert warn">
+          <strong>✏️ Calificación reabierta para corrección</strong><br/>
+          Coordinación habilitó esta calificación para ajuste. Actualiza los campos necesarios y vuelve a <strong>guardar</strong>.
+        </div>
+      {% endif %}
+
+      <div class="form-layout">
+        <!-- Formulario -->
+        <div>
+          <form id="teacherRateForm" method="post" action="/profesor/ratings/create">
+      {% if error %}
+      <div class="alert alert-error" role="alert">
+        <span data-server-error="{{ error }}"></span>
+        <strong>⚠️ No se pudo guardar:</strong> {{ error }}
+      </div>
+      {% endif %}
+
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="student_id" value="{{ student.id }}" />
+            <input type="hidden" name="rotation_id" value="{{ rotation.id }}" />
+            <input type="hidden" name="mes" value="{{ mes }}" />
+
+            <div class="grid-2">
+              <div class="section">
+                <div class="section-title"><span class="ico">🎓</span>Información académica</div>
+                <div class="grid-2-inner">
+                  <div>
+                    <label class="label">🏛️ Universidad</label>
+                    <input class="input" name="universidad" value="{{ (rating.universidad if rating else (student.universidad or '')) }}" {% if locked %}disabled{% endif %}/>
+                  </div>
+                  <div>
+                    <label class="label">📚 Semestre</label>
+                    <input class="input" name="semestre" value="{{ (rating.semestre if rating else (student.semestre or '')) }}" {% if locked %}disabled{% endif %}/>
+                  </div>
+                </div>
+
+                <div class="hint">
+                  <span class="hint-ico">ℹ️</span>
+                  <span>Registra la calificación en escala <strong>0.00 a 5.00</strong>. Todos los componentes pesan <strong>20%</strong>.</span>
+                </div>
+              </div>
+
+              <div class="section">
+                <div class="section-title"><span class="ico">📊</span>Competencias y desempeño</div>
+                <div class="grid-2-inner">
+                  <div>
+                    <label class="label"><span class="ico">🧠</span>Área cognitiva (20%)</label>
+                    <input id="in_cognitiva" name="cognitiva" class="input" type="number" step="0.01" min="0" max="5" value="{{ (prefill.cognitiva if (prefill is defined and prefill and prefill.cognitiva is not none) else (rating.cognitiva if rating else '')) }}" {% if locked %}disabled{% endif %} required />
+                  </div>
+                  <div>
+                    <label class="label"><span class="ico">🧰</span>Área aptitudinal (20%)</label>
+                    <input id="in_aptitudinal" name="aptitudinal" class="input" type="number" step="0.01" min="0" max="5" value="{{ (prefill.aptitudinal if (prefill is defined and prefill and prefill.aptitudinal is not none) else (rating.aptitudinal if rating else '')) }}" {% if locked %}disabled{% endif %} required />
+                  </div>
+
+                  <div>
+                    <label class="label"><span class="ico">🤝</span>Área actitudinal (20%)</label>
+                    <input id="in_actitudinal" name="actitudinal" class="input" type="number" step="0.01" min="0" max="5" value="{{ (prefill.actitudinal if (prefill is defined and prefill and prefill.actitudinal is not none) else (rating.actitudinal if rating else '')) }}" {% if locked %}disabled{% endif %} required />
+                  </div>
+                  <div>
+                    <label class="label"><span class="ico">📝</span>Evaluación (20%)</label>
+                    <input id="in_evaluacion" name="evaluacion" class="input" type="number" step="0.01" min="0" max="5" value="{{ (prefill.evaluacion if (prefill is defined and prefill and prefill.evaluacion is not none) else (rating.evaluacion if rating else '')) }}" {% if locked %}disabled{% endif %} required />
+                  </div>
+
+                  <div>
+                    <label class="label"><span class="ico">👥</span>Participación CPC (20%)</label>
+                    <input id="in_cpc" name="cpc" class="input" type="number" step="0.01" min="0" max="5" value="{{ (prefill.cpc if (prefill is defined and prefill and prefill.cpc is not none) else (rating.cpc if rating else '')) }}" {% if locked %}disabled{% endif %} required />
+                  </div>
+                  <div>
+                    <label class="label"><span class="ico">⏱️</span>% fallas en la rotación</label>
+                    <input id="in_fallas" class="input" type="number" step="0.01" min="0" max="100" name="porcentaje_fallas" value="{{ (rating.porcentaje_fallas if rating else 0) }}" {% if locked %}disabled{% endif %}/>
+                    <div class="muted small">Si es &gt; 10%, la nota final será 0.00.</div>
+                  </div>
+                </div>
+              </div>
+<div class="section">
+                <div class="section-title"><span class="ico">💬</span>Observaciones</div>
+                <label class="label">Comentarios</label>
+                <textarea class="input" name="comentarios" rows="4" placeholder="Escribe observaciones relevantes (opcional)..." {% if locked %}disabled{% endif %}></textarea>
+              </div>
+            </div>
+
+            <div class="actions">
+              <div class="muted small">Asegúrate de revisar los valores antes de guardar.</div>
+              <div>
+                {% if not already_done %}
+                <button class="btn" id="btnGuardar" type="submit"><span class="ico">💾</span>Guardar calificación</button>
+                {% endif %}
+                <a class="btn secondary" href="/profesor?rotation_id={{ rotation.id }}&mes={{ mes }}"><span class="ico">↩️</span>Volver</a>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- Resumen -->
+        <aside class="summary" aria-label="Resumen">
+          <div class="summary-head">
+            <span class="summary-dot"></span>
+            <div>Resumen</div>
+          </div>
+
+          <div class="summary-card">
+            <div class="summary-row">
+              <div class="summary-label">Nota definitiva</div>
+              <div class="summary-value" id="sumNota">{% if rating and rating.nota_definitiva is not none %}{{ "%.2f"|format(rating.nota_definitiva) }}{% else %}—{% endif %}</div>
+              <div class="summary-pill" id="sumPill">{% if rating %}<span class="badge ok">Registrada</span>{% else %}<span class="badge na">Sin calcular</span>{% endif %}</div>
+            </div>
+
+            <div class="summary-sub">
+              <div class="summary-label">Regla de fallas</div>
+              <div class="summary-mini" id="sumRegla">{% if rating %}{% if rating.pierde_por_fallas %}⚠️ >10% fallas → nota 0.00{% else %}✅ OK{% endif %}{% else %}—{% endif %}</div>
+            </div>
+
+            <div class="summary-sub">
+              <div class="summary-label">Campos pendientes</div>
+              <div class="summary-mini" id="sumFaltan">{% if rating %}✅ Completo{% else %}—{% endif %}</div>
+            </div>
+
+            <div class="summary-divider"></div>
+
+            <div class="summary-box">
+              <div class="summary-box-label">Rotación</div>
+              <div class="summary-box-value"><span class="ico">🏥</span>{{ rotation.nombre }}</div>
+            </div>
+            <div class="summary-box">
+              <div class="summary-box-label">Mes</div>
+              <div class="summary-box-value"><span class="ico">📅</span>{{ mes }}</div>
+            </div>
+            <div class="summary-box">
+              <div class="summary-box-label">Estudiante</div>
+              <div class="summary-box-value" id="sumEst">
+                <div>{{ student.nombre }}</div>
+                <div class="muted">{{ student.documento }}</div>
+              </div>
+            </div>
+          </div>
+
+          
+          {% if rating %}
+          <div class="summary-card">
+            <div class="summary-label">Desglose (mi calificación)</div>
+            <div class="summary-mini">🧠 Cognitiva: <b>{{ '%.2f'|format(rating.cognitiva) }}</b></div>
+            <div class="summary-mini">🧩 Aptitudinal: <b>{{ '%.2f'|format(rating.aptitudinal) }}</b></div>
+            <div class="summary-mini">🤝 Actitudinal: <b>{{ '%.2f'|format(rating.actitudinal) }}</b></div>
+            <div class="summary-mini">📝 Evaluación: <b>{{ '%.2f'|format(rating.evaluacion) }}</b></div>
+            <div class="summary-mini">👥 CPC: <b>{{ '%.2f'|format(rating.cpc) }}</b></div>
+            <div class="summary-mini">⛔ % fallas: <b>{{ '%.2f'|format(rating.porcentaje_fallas) }}</b></div>
+          </div>
+          {% endif %}
+
+          <div class="muted small">
+            <span class="ico">🧾</span>La nota se calcula como <strong>promedio simple</strong> (20% cada componente).
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    {% include "partials/footer.html" %}
+  </div>
+<div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true">
+    <span id="toast_icon" class="icon" aria-hidden="true">⚠️</span>
+    <span class="dot" aria-hidden="true"></span>
+    <div class="msg" id="toast_msg">Mensaje</div>
+    <button class="close" type="button" id="toast_close" aria-label="Cerrar">✕</button>
+  </div>
+
+  <script src="/static/js/profesor_rate.js" defer></script>
+</body>
+</html>
