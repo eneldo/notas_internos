@@ -15,8 +15,11 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 
 COPY . /app
 
-# Non-root
-RUN useradd -m appuser
+# Non-root + permisos de escritura en /app (y carpeta data)
+RUN useradd -m appuser \
+ && mkdir -p /app/data \
+ && chown -R appuser:appuser /app
+
 USER appuser
 
 EXPOSE 8000
